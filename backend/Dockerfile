@@ -11,8 +11,7 @@ RUN pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
-# Cope source code
+# Copy source code
 COPY ./src .
 
-# Run FastAPI/FastStream app
-CMD ["uv", "run", "app.py"]
+CMD ["uv", "run", "main.py"]

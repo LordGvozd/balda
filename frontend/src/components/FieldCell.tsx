@@ -1,13 +1,19 @@
 import "../styles/components/field_cell.css";
 
 interface FieldCellProps {
-	letter: string,
+	letter: string | null,
 }
 
 const FieldCell = ({ letter }: FieldCellProps) => {
 	return(
 		<div className="cell">
-			{letter}
+			{
+				letter
+				?
+				letter
+				:
+				""
+			}
 		</div>
 	);
 }

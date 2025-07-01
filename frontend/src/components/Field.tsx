@@ -1,34 +1,35 @@
 import { useEffect, useState } from "react";
 
 import FieldCell from "./FieldCell";
-
+import type { IField, IFieldCell } from "../types/field";
+import { getStartField } from "../api/field.api";
 import "../styles/components/field.css";
 
 const Field = () => {
-	const [fieldMatrix, setFieldMatrix] = useState<string[][]>([]);
+	const [field, setField] = useState<IField | null>(null);
 
 	useEffect(() => {
-		setFieldMatrix(
-			[
-				["", "", ""],
-				["Л", "О", "Х"],
-				["", "", ""],
-			]
-		);
+		getStartField().then((field: IField) => {
+			setField(field);
+		});
 	}, []);
 
 	return(
 		<div className="field">	
 			{
-				fieldMatrix.map((row: string[], rowID: number) => {
+				field && field.rows
+				?
+				field.rows.map((row: IFieldCell[], rowID: number) => {
 					return(<div key={rowID} className="row">
 						{
-							row.map((cellLetter: string, cellID: number) => {
-								return(<FieldCell key={cellID} letter={cellLetter} />)
+							row.map((cell: IFieldCell, cellID: number) => {
+								return(<FieldCell key={cellID} letter={cell.letter} />)
 							})
 						}
 					</div>)
 				})
+				:
+				<></>
 			}
 		</div>
 	);
