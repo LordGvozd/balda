@@ -1,5 +1,10 @@
 .cell {
-	border: 1px solid black;
-	width: 50px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 2px solid black;
+	width: 80px;
 	aspect-ratio: 1 / 1;
+	margin-left: 5px;
+	margin-bottom: 5px;
 }
