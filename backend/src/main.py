@@ -1,9 +1,11 @@
+from pprint import pprint
+
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 import config
-from logic import get_simple_step, get_start_field
+from logic import *
 from models import GameField
 
 
@@ -37,4 +39,17 @@ def run_server() -> None:
 
 
 if __name__ == "__main__":
-    run_server()
+    # run_server() 
+
+    field = get_start_field(5)
+
+    tree = get_tree_by_field(field)
+
+    # pprint(tree)
+
+    print_field(field)
+
+
+    
+
+
