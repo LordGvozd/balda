@@ -3,54 +3,8 @@ from pprint import pprint
 from typing import Self
 
 from models import CellOwner, GameField, FieldCell
-from words import get_random
+from words import *
 
-# @dataclass
-# class FieldNode:
-#     letter: str | None
-#
-#     ns: list[Self]
-#
-#
-# def get_tree_by_field(field: GameField) -> FieldNode:
-#     def get_node(coords: tuple[int, int], processed: list[tuple[int, int]], branch: str) -> FieldNode:
-#
-#         pre_coords = []
-#             (coords[0], coords[1] - 1),
-#             (coords[0], coords[1] + 1),
-#             (coords[0] - 1, coords[1]),
-#             (coords[0] + 1, coords[1]),
-#         ]
-#
-#         n_coords = []
-#
-#
-#         for coord in pre_coords:
-#             if coord in processed:
-#                 continue
-#
-#             if (0 <= coord[0] < len(field)) and (0 <= coord[1] < len(field) - 1):
-#                 if field[coord[1]][coord[0]]["letter"] == None:
-#                     continue
-#                 else:
-#                     n_coords.append(coord)
-#
-#         processed.extend(n_coords)
-#
-#         ns = [get_node(n, processed, branch + str(field[coords[1]][coords[0]]["letter"])) for n in n_coords]
-#
-#         node = FieldNode(
-#             letter = field[coords[1]][coords[0]]["letter"],
-#             ns=ns
-#         )
-#
-#         return node
-#
-#     root = get_node((2, 2), [], "")
-#     print(root.ns)
-#
-#     return root
-#
 
 
 def get_simple_step(field: GameField, owner: CellOwner = CellOwner.bot) -> GameField:
@@ -74,7 +28,7 @@ def get_start_field(size: int) -> GameField:
 
 
 def print_field(field: GameField) -> None:
-    pprint([[f"{cell['letter'] if cell['letter'] is not None else ' '}" for cell in row] for row in field])
+    pprint([[f"{cell['letter'] if cell['letter'] != "" else ' '}" for cell in row] for row in field])
 
 
 
@@ -83,34 +37,39 @@ def print_field(field: GameField) -> None:
 class Node:
     letter: str
     neighbours: list[Self]
+    coord: tuple[int, int]
+
+
+def get_neighbours(target: tuple[int, int], processed_targets: list) -> list[Node]:
+    if target in processed_targets:
+        return
+
+    LEFT = (target[0] - 1, target[1]) if target[0] != 0 else None
+    RIGHT = (target[0] + 1, target[1]) if target[0] != 5 - 1 else None
+    UP = (target[0], target[1] - 1) if target[1] != 0 else None
+    BOTTOM = (target[0], target[1] + 1) if target[1] != 5 - 1 else None
+
+    neighbours_coords = [n for n in (LEFT, UP, BOTTOM, RIGHT) if n is not None and field[n[1]][n[0]]["letter"] != ""]
+    return [
+        Node(
+            letter=field[c[1]][c[0]]["letter"],
+            neighbours=get_neighbours(c, [*processed_targets, target]),
+            coord=target
+        ) for c in neighbours_coords
+    ]
 
 
 
-
-def get_all_words(field: GameField) -> set[str]:
-    def _get_neighbours(target: tuple[int, int], processed_targets: list) -> list[Node]:
-        if target in processed_targets:
-            return
-
-        LEFT = (target[0] - 1, target[1]) if target[0] != 0 else None
-        RIGHT = (target[0] + 1, target[1]) if target[0] != 5 - 1 else None
-        UP = (target[0], target[1] - 1) if target[1] != 0 else None
-        BOTTOM = (target[0], target[1] + 1) if target[1] != 5 - 1 else None
-
-        neighbours_coords = [n for n in (LEFT, UP, BOTTOM, RIGHT) if n is not None and field[n[1]][n[0]]["letter"] != ""]
-        return [
-            Node(
-                letter=field[c[1]][c[0]]["letter"],
-                neighbours=_get_neighbours(c, [*processed_targets, target])
-            ) for c in neighbours_coords
-        ]
-
+def get_all_words(field: GameField) -> list[list[Node]]:
     words = []
     def _get_word(target: Node, word: str):
         for n in target.neighbours:
             if n.neighbours is not None:
-                _get_word(n, word + n.letter)
+                
+                _get_word(n, [*word, n])
             else:
+                if word in words:
+                    return
                 words.append(word)
 
 
@@ -119,17 +78,77 @@ def get_all_words(field: GameField) -> set[str]:
             target = (x, y)
             root = Node(
                 letter=field[target[1]][target[0]]["letter"],
-                neighbours=_get_neighbours(target, [])
+                neighbours=get_neighbours(target, []),
+                coord=target
             )
-            _get_word(root, root.letter)
+            _get_word(root, [root, ])
+    
+    return words
 
-    return (set(words))
+def node_list_to_str(node_list: list[Node]) -> list[str]:
+    return ["".join([n.letter for n in word]) for word in node_list]
 
 
+def get_real_words(field) -> set[str]:
+    all_words = get_all_words(field)
+    string_words = node_list_to_str(all_words)
+    return {w for w in string_words if is_world_real(w) and len(w) >= 3}
+
+def get_max_possible_word(field) -> list[Node]:
+    sorted_words = sorted(get_all_words(field), key=len)
+    
+    best = ""
+
+    for word in sorted_words:
+        str_word =  node_list_to_str([word, ])[0]
+
+        starts = get_starts_with(str_word)
+        ends = get_ends_with(str_word)
+        
+
+        for w in starts:
+            if len(word) + 1 != len(w):
+                continue
+            
+            
+            LEFT = (word[-1].coord[0] - 1, word[-1].coord[1]) if word[-1].coord[0] != 0 else None
+            RIGHT = (word[-1].coord[0] + 1, word[-1].coord[1]) if word[-1].coord[0] != 5 - 1 else None
+            UP = (word[-1].coord[0], word[-1].coord[1] - 1) if word[-1].coord[1] != 0 else None
+            BOTTOM = (word[-1].coord[0], word[-1].coord[1] + 1) if word[-1].coord[1] != 5 - 1 else None
+            
+            for side in (LEFT, RIGHT, UP, BOTTOM):
+                if side:
+                    if field[side[1]][side[0]] == "":
+                        if len(w) > len(best):
+                            best = w
+                            break
+
+        for w in ends:
+            if len(word) + 1 != len(w):
+                continue
+            
+            
+            LEFT = (word[0].coord[0] - 1, word[0].coord[1]) if word[0].coord[0] != 0 else None
+            RIGHT = (word[0].coord[0] + 1, word[0].coord[1]) if word[0].coord[0] != 5 - 1 else None
+            UP = (word[0].coord[0], word[0].coord[1] - 1) if word[0].coord[1] != 0 else None
+            BOTTOM = (word[0].coord[0], word[0].coord[1] + 1) if word[0].coord[1] != 5 - 1 else None
+            
+            for side in (LEFT, RIGHT, UP, BOTTOM):
+                if side:
+                    if field[side[1]][side[0]] == "":
+                        if len(w) > len(best):
+                            best = w
+                            break
+
+    return best
+        
+        
 
 
 field = get_start_field(5)
 
+print(get_max_possible_word(field))
+
 print_field(field)
-pprint(get_all_words(field))
+pprint(get_real_words(field))
 
