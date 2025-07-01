@@ -1,5 +1,5 @@
 export interface IFieldCell {
-	owner: string,
+	owner: "player" | "bot" | "nobody",
 	letter: string | null,
 }
 

@@ -14,6 +14,24 @@ const Field = () => {
 		});
 	}, []);
 
+	const updateFieldCell = (rowID: number, cellID: number, userLetter: string) => {
+		/*
+		 Updates field state after
+		 clicking on cell and providing letter
+		 by user.
+		 This function is a callback for cell component.
+		 */
+
+		if (!field || !field.rows) {
+			return;
+		}
+		
+		let newField = field;
+		newField.rows[rowID][cellID].owner = "player";
+		newField.rows[rowID][cellID].letter = userLetter;
+		setField(newField);
+	}
+
 	return(
 		<div className="field">	
 			{
@@ -23,7 +41,12 @@ const Field = () => {
 					return(<div key={rowID} className="row">
 						{
 							row.map((cell: IFieldCell, cellID: number) => {
-								return(<FieldCell key={cellID} letter={cell.letter} />)
+								return(
+									<FieldCell 
+										key={cellID} callback={(userLetter: string) => updateFieldCell(rowID, cellID, userLetter)}
+										startLetter={cell.letter} 
+									/>
+								)
 							})
 						}
 					</div>)

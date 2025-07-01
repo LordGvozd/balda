@@ -1,12 +1,38 @@
+import { useState } from "react";
 import "../styles/components/field_cell.css";
 
 interface FieldCellProps {
-	letter: string | null,
+	callback: Function 
+	startLetter: string | null,
 }
 
-const FieldCell = ({ letter }: FieldCellProps) => {
+const FieldCell = ({ callback, startLetter }: FieldCellProps) => {
+	const [letter, setLetter] = useState<string | null>(startLetter);
+
+	const addLetter = () => {
+		/*
+		 Changes cell letter
+		 if cell is empty and provided
+		 letter is correct.
+		 Updates game field by calling a callback
+		 function.
+		 */
+		if (letter) {
+			alert("Выберите пустую клетку");
+			return;
+		}
+		const userLetter = prompt("Введите букву: ");
+		if (userLetter && userLetter.length === 1 && isNaN((Number(userLetter)))) {
+			setLetter(userLetter.toUpperCase());
+			// Updating game field.
+			callback(userLetter);
+		} else {
+			alert("Некорректная буква");
+		}
+	}
+
 	return(
-		<div className="cell">
+		<div className="cell" onClick={addLetter}>
 			{
 				letter
 				?
